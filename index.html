@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .container {
+            margin-bottom: 20px;
+        }
+
+        button {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<h1>Invoice Generator</h1>
+
+<div id="login-section" class="container">
+    <h2>Login</h2>
+    <input type="email" id="login-email" placeholder="Email" required>
+    <input type="password" id="login-password" placeholder="Password" required>
+    <button onclick="login()">Login</button>
+    <p id="login-message"></p>
+</div>
+
+<div id="register-section" class="container">
+    <h2>Register</h2>
+    <input type="text" id="register-name" placeholder="Name" required>
+    <input type="email" id="register-email" placeholder="Email" required>
+    <input type="password" id="register-password" placeholder="Password" required>
+    <button onclick="register()">Register</button>
+    <p id="register-message"></p>
+</div>
+
+<div id="products-section" class="hidden container">
+    <h2>Add Products</h2>
+    <textarea id="products-input" rows="5"
+              placeholder='Enter products as JSON, e.g., [{"name":"Product A","qty":1,"rate":100}]' required></textarea>
+    <button onclick="addProducts()">Add Products</button>
+    <p id="products-message"></p>
+</div>
+
+<div id="quotations-section" class="hidden container">
+    <h2>View Quotations</h2>
+    <button onclick="fetchQuotations()">Fetch Quotations</button>
+    <div id="quotations-list"></div>
+</div>
+
+<script>
+    let authToken = '';
+
+    function showMessage(elementId, message, isError = false) {
+        const messageElement = document.getElementById(elementId);
+        messageElement.textContent = message;
+        messageElement.style.color = isError ? 'red' : 'green';
+    }
+
+    async function login() {
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+
+        try {
+            const response = await fetch('http://localhost:3000/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({email, password})
+            });
+            const data = await response.json();
+            if (response.ok) {
+                authToken = data.result.data.token;
+                showMessage('login-message', 'Login successful!');
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('register-section').classList.add('hidden');
+                document.getElementById('products-section').classList.remove('hidden');
+                document.getElementById('quotations-section').classList.remove('hidden');
+            } else {
+                showMessage('login-message', data.error, true);
+            }
+        } catch (error) {
+            showMessage('login-message', 'Login failed. Please try again.', true);
+        }
+    }
+
+    async function register() {
+        const name = document.getElementById('register-name').value;
+        const email = document.getElementById('register-email').value;
+        const password = document.getElementById('register-password').value;
+
+        try {
+            const response = await fetch('http://localhost:3000/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({name, email, password})
+            });
+            const data = await response.json();
+            if (response.ok) {
+                if(data.result.error.includes('user exists')){
+                    showMessage('register-message', 'User already exists', true);
+                }else {
+                    showMessage('register-message', 'Registration successful! You can now log in.');
+                }
+            } else {
+                showMessage('register-message', data.error, true);
+            }
+        } catch (error) {
+            showMessage('register-message', 'Registration failed. Please try again.', true);
+        }
+    }
+
+    async function addProducts() {
+        const productsInput = document.getElementById('products-input').value;
+        const products = JSON.parse(productsInput);
+        try {
+            const response = await fetch('http://localhost:3000/product/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify(products)
+            });
+            const data = await response.json();
+            if (response.ok) {
+                showMessage('products-message', 'Products added successfully! To open/download go to this PDF URL: ' + data.result.data.pdfUrl + 'To open/download image go to this image URL: ' + data.result.data.imageUrl);
+            } else {
+                showMessage('products-message', data.error, true);
+            }
+        } catch (error) {
+            showMessage('products-message', 'Failed to add products. Please try again.', true);
+        }
+    }
+
+    async function fetchQuotations() {
+        try {
+            const response = await fetch('http://localhost:3000/quotation/list', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                const listElement = document.getElementById('quotations-list');
+                listElement.innerHTML = '';
+
+                data.result.data.quotations.forEach(quotation => {
+                    // Create a link for the PDF
+                    const pdfLink = document.createElement('a');
+                    pdfLink.href = quotation.pdfUrl;
+                    pdfLink.textContent = `Download PDF - Invoice from ${new Date(quotation.date).toLocaleDateString()}`;
+                    pdfLink.target = '_blank';
+                    pdfLink.style.marginRight = '10px'; // Optional: Add some space between the links
+
+                    // Create a link for the Image
+                    const imageLink = document.createElement('a');
+                    imageLink.href = quotation.imageUrl;
+                    imageLink.textContent = `Download Image - Invoice from ${new Date(quotation.date).toLocaleDateString()}`;
+                    imageLink.target = '_blank';
+
+                    // Append both links to the list element
+                    listElement.appendChild(pdfLink);
+                    listElement.appendChild(document.createElement('br')); // Line break between PDF and image links
+                    listElement.appendChild(imageLink);
+                    listElement.appendChild(document.createElement('br')); // Line break between quotations
+                });
+
+            } else {
+                showMessage('products-message', data.error, true);
+            }
+        } catch (error) {
+            showMessage('products-message', 'Failed to fetch quotations. Please try again.', true);
+        }
+    }
+</script>
+</body>
+</html>
