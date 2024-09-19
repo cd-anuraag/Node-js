@@ -26,7 +26,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build --platform linux/amd64 -t anuraagb/nodejs:latest .
+          docker build --platform linux/amd64 -t anuraagb/latest .
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -36,5 +36,4 @@ jobs:
 
       - name: Push Docker image
         run: |
-          docker tag nodejs:latest ${{ secrets.DOCKER_USERNAME }}/nodejs:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/nodejs:latest
