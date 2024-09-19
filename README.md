@@ -166,35 +166,6 @@ https://www.postman.com/joint-operations-engineer-4869303/workspace/node-js/coll
   }
   ```
 
-### 5. **Bonus: Generate Invoice as Image**
-- **POST** `/products/add?format=image`
-- **Description**: Adds products and generates the invoice as an image.
-- **Authorization**: Requires JWT token in the `Authorization` header: `Bearer your-jwt-token`
-- **Request Body** (Same as above for products):
-  ```json
-  {
-    "products": [
-      {
-        "name": "Product 1",
-        "qty": 10,
-        "rate": 100
-      },
-      {
-        "name": "Product 2",
-        "qty": 5,
-        "rate": 200
-      }
-    ]
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "message": "Quotation created",
-    "image": "image-download-link"
-  }
-  ```
-
 ## Additional Libraries Used
 1. bcrypt - For hashing passwords
 2. jsonwebtoken - For generating JWT tokens
