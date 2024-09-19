@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     libxdamage1 \
     libxtst6 \
     libdrm2 \
+    libgbm1 \
     ca-certificates \
     fonts-liberation \
     libappindicator3-1 \
