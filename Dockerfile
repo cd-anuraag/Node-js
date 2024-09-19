@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     libxcomposite1 \
     libxdamage1 \
     libxtst6 \
+    libdrm2 \ # Add this line
     ca-certificates \
     fonts-liberation \
     libappindicator3-1 \
